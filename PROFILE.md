@@ -82,13 +82,25 @@ Work I'd point to:
 
 **The shared batch state machine** every connector depends on for document processing under a distributed lease. I authored its ownership protocol and its idle-cost work: claim-and-lease ownership, heartbeat renewal that only renews still-in-flight documents, adaptive idle backoff that self-tunes polling cadence, terminal-versus-retryable error classification, bounded retry and bounded memory. Adjacent work on the same class — busy-tick floor, run-loop jitter — is another engineer's.
 
-**The bulk-import sidecar** (founder, dominant author): an authenticated Socket.IO channel, a CPU-sized worker-thread pool so long spreadsheet parses never block the event loop, and about a dozen document-type processors on one generic pipeline resolved through DI factories. The interesting parts are the failure-ordering invariants:
+**The bulk-import sidecar** is the service I've owned most completely: I founded it in August 2024 and wrote 289 of its commits over two years, against 28 for the next human contributor. It's ~29,800 lines of non-test TypeScript across 200+ files with 117 test files, deployed to ECS, and it exists so that long spreadsheet imports stop blocking the customer-facing portal.
 
-- A mixed batch returns *partially completed* with a generated failed-rows workbook, rather than failing whole — because a forced re-upload would duplicate the rows that already landed.
+The architecture is a DI container, an authenticated Socket.IO server, and a CPU-sized worker-thread pool. Three parts I'd defend in a design review:
+
+**The generic processor base.** A 1,642-line class parameterised over workbook, document and upload types, driving roughly a dozen import pipelines — products, prices, costs, media, purchase orders and their worksheets, transfer orders, stock adjustments, vendors, employees — through one lifecycle: download, parse, map, schema-validate, dedupe, dispatch to the internal data API, persist status. Before it, each upload type wired its own parser, mapper, validator and config by hand. After, adding a spreadsheet type is a set of factory registrations rather than a new vertical. That consolidation is the thing I'd point to, not the line count.
+
+**Two trust levels on one channel.** The portal's own backend connects with a shared API secret; end-user browser sessions connect with a Cognito JWT. Same Socket.IO server, different principals, and the distinction matters because job progress is per-user data. Socket.IO's `connectionStateRecovery` buffers progress events for a client that drops and reconnects mid-job, so a user who loses their connection during a twenty-minute import doesn't come back to a blank screen and re-submit.
+
+**Failure ordering, which is really a data-integrity story.** Three invariants, each written down because the wrong order silently loses or duplicates rows:
+
+- A mixed batch returns *partially completed* with a generated failed-rows workbook, rather than failing whole — because a forced re-upload would duplicate the rows that already landed. Re-processing is refused unless the upload is still in its pre-processed state.
 - Saved document IDs are captured before the terminal status write, so a failure there can't erase the record of what actually persisted.
 - A non-critical diagnostic archive write is isolated so its failure can't overwrite an already-completed record with a failure.
 
 Bridging trace context and cached secrets across the worker-thread boundary needed explicit carriers, since `AsyncLocalStorage` doesn't survive a structured-clone boundary.
+
+I also ran a deliberate test-quality pass on it rather than a coverage-number pass: 125 weak `.toBeDefined()` assertions replaced with specific value checks, and 285+ tests added for external-failure paths — S3 timeouts, upstream API errors, partial saves — across 46 files in one change. I graded the suite against a written rubric before and after, 70 to 90. Coverage percentage barely moved; what changed is that the failure paths are now exercised.
+
+**Worth reading together with the portal work below.** The upload subsystem I built in the customer-facing portal (validator, controller and service base classes; S3 upload; progress over a Socket.IO channel) and this sidecar are two halves of one path — the interface and the engine behind it, across two services. I built both ends.
 
 **A fan-out router** in the same fleet: sibling services discovered at runtime through service discovery, each document republished to every sibling's queue, and a document counted as failed only when *all* queues fail — reaching four of five is recorded as success. Two details I'm fond of: distinguishing an API response with an *absent* collection key (transient, don't cache, retry) from a genuinely *empty* one (cache normally); and deliberately classifying one documented-absent config as expected steady state rather than an error span, because recording it as an error would poison the collector's keep-all-errors sampling policy on every boot.
 
