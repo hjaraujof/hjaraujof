@@ -1,0 +1,8 @@
+# Private working material — NEVER publish.
+# Contains verbatim employer commit messages harvested for voice calibration,
+# interview story material, and draft profile copy.
+.private/
+
+# Internal working notes: publish checklist, cv corrections, open questions.
+# Contains employer-named filesystem paths. Not a portfolio artifact.
+INSTRUCTIONS.md
