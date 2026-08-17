@@ -1,6 +1,6 @@
 # Harold Araujo — engineering detail
 
-The long version of my [profile](README.md), for people who want specifics. Current employer is unnamed and no proprietary logic appears here; everything below is described at the level of engineering mechanics.
+The long version of my [profile](README.md), for people who want specifics. No proprietary logic appears here — everything is described at the level of engineering mechanics, which is the level that transfers anyway.
 
 Where work was shared, I say so. Commit counts are a weak signal and I have tried not to lean on them. And where I say "sole author" or "primary maintainer," you cannot verify that from this page — a reference or a future manager can, and I would rather state the limit than imply a check you can't actually run.
 
