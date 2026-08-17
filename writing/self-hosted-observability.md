@@ -1,5 +1,7 @@
 # Self-hosting observability, honestly
 
+*August 2026*
+
 I run the observability stack for a fifty-plus service fleet on hardware I provision myself: Loki for logs, Mimir for metrics, Tempo for traces, Pyroscope for continuous profiling, Grafana in front, an OpenTelemetry Collector taking OTLP and fanning out to the three backends. Terraform provisions it on AWS, S3 holds long-term storage for each backend, a private DNS zone carries internal telemetry, and NGINX with Let's Encrypt terminates TLS for the UI.
 
 The number that got it approved: **roughly $120–130 per month**, against a costed **$1,000–3,000 per month** for equivalent commercial coverage at 20–50 hosts. That is a real spread, and I stand behind the comparison.

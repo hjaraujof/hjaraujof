@@ -1,5 +1,7 @@
 # Publishing in dependency order
 
+*August 2026*
+
 Here is a topology that sounds reasonable and is a trap.
 
 You have a fleet of TypeScript repositories — call it fifty — and about a dozen of them are internal libraries published to a private registry. Every library is versioned by CI: merge to the release branch, and a pipeline computes the next version, publishes it, and writes its own version-bump commit. No human touches a `version` field. Consumers depend on exact pins and get re-pinned when a new build lands.

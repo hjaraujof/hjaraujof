@@ -1,5 +1,7 @@
 # Where tracing stops being automatic
 
+*August 2026*
+
 Auto-instrumentation buys you a trace that covers one process handling one synchronous request. Every boundary past that — a queue message, a worker thread, a process start, a bundler, a module import — is a place where context either survives because somebody made it survive, or silently doesn't.
 
 I own the OpenTelemetry instrumentation library for a fifty-service fleet: decorator-driven span creation, OTLP export, and the context plumbing underneath. Adding spans was never the work. The work was finding the boundaries where spans stop connecting, and every one of them failed the same way — no error, no warning, and a trace that looks plausible until you notice it should have had a parent.

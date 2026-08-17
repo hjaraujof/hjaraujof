@@ -1,5 +1,7 @@
 # When your safety check is the thing that's broken
 
+*August 2026*
+
 I maintain a shared devtooling package that about thirty repositories extend for their ESLint, TypeScript, and test configuration. It also ships two small command-line validators that run in CI:
 
 - one fails the build if any internal dependency is declared with a caret or tilde instead of an exact version,
