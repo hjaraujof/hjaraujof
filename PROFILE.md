@@ -45,11 +45,26 @@ Both were, for a while, doing nothing at all. See the write-up.
 
 → Full write-up: [When your safety check is the thing that's broken](writing/false-green-gates.md)
 
-**Test framework migration.** The shared Vitest config landed six weeks *before* the first repo migrated — library first, consumers after. I then ran the first wave of Jest→Vitest migrations myself across the shared libraries and core connectors, 11 of roughly 24 repos, after which four other engineers picked up the pattern independently for the rest. Notable failures along the way:
+**Test framework migration.** I wrote the shared Vitest preset six weeks *before* the first repo migrated — library first, consumers after — and 24 repos now consume it via `mergeConfig`. It sets the coverage provider, a JUnit reporter wired to CI test reporting, and heap logging; it deliberately does *not* pin isolation or pool settings, because two repos legitimately needed to override them. Eleven other Vitest repos keep standalone configs and don't consume it, which is fine — it was never a mandate.
+
+Of the fleet's 27 Jest→Vitest migrations, **I performed 15** — the shared libraries, the connector base, the data API, the portal, the sidecar — and five colleagues did the other 12. Two of mine were finishing other people's: one repo had jest removed with no replacement, leaving it with no test runner at all, and another carried an abandoned half-migration whose 42 residual type errors I cleared before turning its CI gate on.
+
+Notable failures along the way:
 
 - Vitest 4 began calling `new` on mocked constructors, breaking every arrow-factory `mockImplementation`. The obvious fix — a plain function expression — wasn't durable, because the shared ESLint config's own `prefer-arrow-callback` autofix would convert it straight back to a broken arrow. Class expressions satisfy constructability and are immune to that autofix. ~175 tests recovered across three repos.
 - A mock-hoisting behaviour drifted between patch releases: passing on 4.1.3, failing on CI's 4.1.5. `vi.spyOn` is version-stable; the factory pattern wasn't.
 - A leaked fake timer under a shared worker froze `setTimeout` and produced 40 cascading CI failures while all 454 tests passed locally. Fixed the leak at its source, then removed the flag that allowed cross-file state to leak at all.
+- A dead, unawaited `vi.importActual`/`vi.doMock` pair surfaced as an intermittent teardown error in roughly one run in four — while every test still reported passing, which is why it had been written off as noise.
+
+**Not just unit tests.** Five distinguishable kinds exist in this fleet and my share differs sharply by kind, so it's worth separating them.
+
+The bulk is ordinary unit testing with mocked boundaries, and that's where my near-total-ownership repos sit — 112 of 121 test files in the import sidecar, 109 of 112 in the devops CLI, 38 of 43 in the instrumentation library, 12 of 12 in the shared utility package. Across the eight repos I own most of, 326 of 459 test files trace to me. That figure is honestly skewed: it's pulled up by those four and pulled down by two genuinely shared repos where I'm a large minority or tied, not dominant.
+
+Beyond that: **integration suites that use real components rather than mocks** — ten pipeline tests in the sidecar running parse → validate → transform → dispatch end to end, plus upload and socket tests against a real Socket.IO connection and real workbook services. **Contract tests**, which I built solely: a route-aware fake of the data API whose manifest is *generated from the live controllers*, so route drift fails a test instead of passing silently. **Characterization suites** written against a real Postgres to pin existing behaviour before converting two services into the monorepo. And **infrastructure tests** — alerting rules for the metrics backend have their own rule-unit specs, plus a reconciliation script, because an alert that cannot fire is worse than no alert.
+
+**How I treat flake.** Not by re-running until green. Four examples where the commit records a measured before and after: a suite taken from 3-of-8 passing to **43 of 43 across ten consecutive runs** by scoping non-parallel execution to only the database-backed project rather than the whole suite; the teardown bug above measured at **0 of 12 runs** after the fix against roughly 1-in-4 before; the constructable-mock break recovering 29 tests in one package and ~175 across three; and a deliberate quality pass replacing **125 weak `.toBeDefined()` assertions** with value checks and adding **285+ external-failure tests** across 46 files, graded against a written rubric from 70 to 90. Coverage percentage barely moved on that last one — the failure paths went from unexercised to exercised, which is the part that matters.
+
+I'd add one honest note: the global DynamoDB mock that fixed a worker-pool flake in the largest connector, and the majority of that connector's and the data API's test files, are colleagues' work.
 
 ## Observability platform
 
