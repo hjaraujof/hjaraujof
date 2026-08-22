@@ -161,6 +161,22 @@ Two pieces of the surrounding contract layer I'd point to. A **schema registry**
 
 **Cross-cutting migrations** I led: a required-UUID identity field added to every operational document — a breaking change across 12+ services, sequenced schema-first with generation as a safety net during rollout, deterministic v5 IDs so reprocessing stays idempotent, and legacy services excluded with written rationale; four overlapping libraries consolidated into one namespaced package with subpath exports, migrated across 27 consumers in dependency-ordered batches; and a structured-logging replacement with a wide-event child-logger API, jittered retry, transport health checks, and a stderr fallback.
 
+## Cloud security posture management (2021–2023)
+
+Before the platform work, at a cloud-security startup. Two halves: the open-source engine, and the private analysis service behind its IAM findings.
+
+**The open-source half** is [CloudGraph](https://github.com/cloudgraphdev), a GraphQL cloud security posture management engine whose CLI has 889 stars. I built out most of the Azure provider's resource coverage — 30-plus service crawlers across AKS, Active Directory, Event Grid and Event Hub, Data Factory, Security Center, App Service, SQL and networking — and I'm the #2 contributor overall there, #1 by feature commits. On the AWS provider I added crawlers for CloudFront, DynamoDB, CloudFormation, Elastic Beanstalk and VPC, wrote the IAM policy and permissions-boundary analysis, and wrote the Terraform that provisions each service I added so its crawler could be exercised against a real resource rather than a fixture. Anyone can check all of that.
+
+**The private half** is the blast-radius analysis service, a NestJS/TypeScript microservice of roughly 11,200 non-test lines. I wrote all of it except the network-reachability engine, which is a colleague's — about 9,300 lines. What makes it interesting is that it reimplements a meaningful slice of AWS's own IAM policy evaluation rather than calling the Policy Simulator:
+
+- **Policy evaluation with real precedence.** One evaluator handles identity-based, resource-based, inline, managed, permission-boundary and trust policies, resolving `Action`/`NotAction` and `Resource`/`NotResource`, ARN pattern matching, and roughly forty IAM condition operators — the string and ARN families, the numeric and date families, `Bool`, the `IfExists` variants, and `IpAddress` by actual CIDR containment. Explicit Deny beating Allow is computed as a set difference per principal rather than special-cased.
+- **Principals as a first-class problem.** Statements get classified across AWS accounts, IAM roles, IAM users, assumed-role sessions, SAML sessions, OIDC/web-identity sessions and service principals. `Principal: "*"` expands against every ARN known from the crawl, which means public exposure falls out of the evaluation as a natural consequence instead of needing its own detector.
+- **The trust graph.** Every role's assume-role policy runs through the same evaluator, and reachability is then computed across `sts:AssumeRole`, `AssumeRoleWithSAML` and `AssumeRoleWithWebIdentity`, so "who can become this role" is answered by the same machinery that answers "what can this role do".
+- **Multi-degree propagation, which is the product.** From one starting ARN, the assessment walks outward degree by degree, merging and deduplicating findings per parent node as the frontier expands. It's cancellable mid-run through a flag the loop checks, because the alternative is waiting out an assessment you already know you don't want.
+- **The shape it ships in.** An SQS-driven worker and a REST API in one process, two-tier result storage with Redis in front of S3, structured logging and error tracking, deployed through GitLab CI to Kubernetes with a review app per merge request.
+
+The service consumes a pre-crawled resource graph from the crawler rather than calling AWS itself — the crawling is the provider work above, which is a different piece of the same system.
+
 ## How I make and document decisions
 
 I don't have headcount authority and don't want it, so the influence I have is whatever my written reasoning earns. In practice that looks like four habits.
