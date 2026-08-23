@@ -53,7 +53,7 @@ The failure mode I was avoiding is specific: an alert nobody acts on trains peop
 
 ## The secret in the boot log
 
-One finding here was security, not reliability, and it's worth including because it's the kind of thing self-hosting puts on your plate.
+One finding here was security, not reliability, and self-hosting is what put it on my plate.
 
 The instance bootstrapped by cloning its own configuration at boot, using a deploy key. The key was being written into the boot log. Anyone with log access had the key.
 

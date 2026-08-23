@@ -12,7 +12,7 @@ A full resync re-pulls a client's entire dataset from a vendor system through a 
 
 Doing that by hand is unsafe in three independent ways.
 
-There are roughly **forty document types with real dependency edges** between them. A catalogue style depends on brand, vendor, classification, attribute set and tax category. A sales receipt depends on customer, employee, style and tax category. Trigger a type before its dependencies have landed and its mappers read reference data that isn't there yet — no error, just rows written with fields missing.
+There are roughly **forty document types with real dependency edges** between them. A catalogue style depends on brand, vendor, classification, attribute set and tax category. A sales receipt depends on customer, employee, style and tax category. Trigger a type before its dependencies have landed and its mappers read reference data that isn't there yet — no error, just rows silently written with fields missing.
 
 Several types run to **hundreds of thousands of records**, and the consumer downstream has a fixed per-instance throughput ceiling. Fire everything at once and you don't get a slow sync, you get a flooded consumer and a queue that takes hours to drain.
 
@@ -20,7 +20,7 @@ And a full run takes **many hours**. A closed laptop, a dropped connection or a 
 
 ## What I designed
 
-Four decisions, and I'd still make all four.
+I would still make all four of these.
 
 **The dependency graph is data, not call order.** Phase tiers and per-type dependencies live in a config module and a YAML file rather than being implicit in the sequence somebody wrote the calls in. The config validates itself at construction: unknown type references, phase-membership consistency, and cycles via a depth-first recursion stack. The alternative — ordering encoded in imperative code — means the graph is only knowable by reading the whole execution path, and a new document type gets added in the wrong place by someone who read the code correctly and still guessed wrong.
 
@@ -32,11 +32,11 @@ Four decisions, and I'd still make all four.
 
 ## What production taught the person running it
 
-All four of the following are his work, not mine. I am describing them because they are the interesting part.
+All four of the following are his work, not mine.
 
 **A completion poller is a load generator against the thing it is watching.** The tool polled the consumer's state tables every ten seconds per document type. For a single high-volume type, those reads all land on one storage partition — the same partition the consumer is writing its state transitions to. Under real volume the poller throttled the consumer it was waiting for, so the count never stabilised and the phase timed out. From outside, that is indistinguishable from a genuine stall. He raised the interval to thirty seconds.
 
-I find this the most interesting of the four because it is a category of bug I did not have a slot for. I had thought about the tool's effect on the *vendor* (rate limits) and on the *consumer* (throughput ceiling). I had not thought about the tool's effect on the consumer *by way of observing it*. Monitoring as a source of load is obvious once stated and was not in my design vocabulary.
+This is a category of bug I did not have a slot for. I had thought about the tool's effect on the *vendor* (rate limits) and on the *consumer* (throughput ceiling). I had not thought about the tool's effect on the consumer *by way of observing it*. Monitoring as a source of load is obvious once stated and was not in my design vocabulary.
 
 **Pass and fail are not enough terminal states.** He added a third: a run that correctly enqueued everything but whose downstream has not finished draining. My design had a binary outcome, which meant a correct run against a slow tail reported failure — and a reported failure on a six-hour destructive operation is expensive, because the honest response to it is to check everything by hand. Separating "I did my job and the downstream is still working" from "something is wrong" is the difference between a tool an operator trusts and one they double-check.
 
@@ -58,8 +58,8 @@ The line-blame split is now about 73/27 in my favour and moving toward him, whic
 
 The pattern in all four gaps is the same, and I didn't see it until I lined them up: **every one is about the downstream's behaviour under real volume.** The poller contending with the consumer, the tail that drains slower than the run, the wasted work behind an un-consulted graph, the state file diverging from live counts. Not one of them is about the vendor, the dependency ordering, or the tool's internal structure — the parts I could and did reason about from a design document.
 
-That is not a coincidence and it is not really a failure of imagination. Volume-dependent downstream behaviour is the class of thing that does not exist at design time. You cannot test it in staging because staging doesn't have hundreds of thousands of records, and you cannot reason about it from the code because it emerges from the interaction of two systems under load.
+That is not a coincidence. Volume-dependent downstream behaviour is the class of thing that does not exist at design time. You cannot test it in staging because staging doesn't have hundreds of thousands of records, and you cannot reason about it from the code because it emerges from the interaction of two systems under load.
 
 What I could have built is the instrumentation that would have surfaced it sooner. The tool measured its own progress carefully — per-type counts, phase timing, reconciliation. It did not measure **its own effect on the systems it was driving**: no metric for the consumer's throttle rate during a run, no comparison of consumer write latency inside a sync window versus outside it. Three of the four findings above would have shown up as a graph rather than as a false timeout somebody had to diagnose.
 
-If I build another tool that drives production systems hard, that is the part I add first: not more observability of the operation, but observability of the operation's blast radius. I did not do it here, and someone else paid the diagnosis cost.
+The next tool I build that drives production systems hard gets that instrumentation before it ships: the consumer's throttle rate during a run, and its write latency inside a sync window against outside it. I did not build it here, and someone else paid the diagnosis cost.
