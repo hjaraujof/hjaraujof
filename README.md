@@ -34,6 +34,10 @@ Technical write-ups on the work above — the reasoning, not the résumé versio
 - [Self-hosting observability, honestly](https://github.com/hjaraujof/hjaraujof/blob/main/writing/self-hosted-observability.md) — the cost case for running your own LGTM stack, and the operational bill that comes with it.
 - [Where tracing stops being automatic](https://github.com/hjaraujof/hjaraujof/blob/main/writing/where-tracing-stops-being-automatic.md) — the boundaries auto-instrumentation doesn't cross, and two sampling defects that delete data while everything reports healthy.
 - [I designed it, someone else ran it](https://github.com/hjaraujof/hjaraujof/blob/main/writing/designed-it-someone-else-ran-it.md) — what production taught the colleague who operated a tool I built, and why design-time reasoning misses it.
+- [A missing measurement is not a passing one](https://github.com/hjaraujof/hjaraujof/blob/main/writing/missing-measurement-not-passing.md) — the availability SLI whose denominator reported a flawless zero on the two busiest services in production, why span status cannot see a 4xx, and how each traffic gate was derived rather than picked.
+- [What happens if the write after this one fails](https://github.com/hjaraujof/hjaraujof/blob/main/writing/failure-ordering.md) — three invariants in a bulk-import pipeline that are failure-ordering decisions rather than features.
+- [The rule needed to be executable](https://github.com/hjaraujof/hjaraujof/blob/main/writing/executable-rules.md) — a tracing policy in a credential-handling service enforced by a test, and the guardrail of my own that was the reason I stopped looking.
+- [Test the crawler against the resource, not a fixture](https://github.com/hjaraujof/hjaraujof/blob/main/writing/crawlers-against-real-resources.md) — why a cloud-crawler fixture only proves the crawler agrees with your recollection, and what a provisioned resource per service costs.
 
 ## Open source
 
