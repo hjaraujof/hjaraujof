@@ -4,7 +4,7 @@
 
 Viña del Mar, Chile (UTC-4) · [LinkedIn](https://www.linkedin.com/in/harold-araujo/) · haroldj.araujof@gmail.com
 
-Senior engineer, 12+ years, currently operating at platform scope across a 58-repo TypeScript fleet: instrumentation, CI and release engineering, and the dependency graph underneath them. Python and TypeScript/Node.js on AWS and Azure, with a bias for test automation, migration discipline, and writing things down so other people can move.
+Senior engineer, 14 years, currently operating at platform scope across a 58-repo TypeScript fleet: instrumentation, CI and release engineering, and the dependency graph underneath them. Python and TypeScript/Node.js on AWS and Azure, with a bias for test automation, migration discipline, and writing things down so other people can move.
 
 Open to Senior/Staff backend or platform roles, IC track, remote (UTC−4).
 
