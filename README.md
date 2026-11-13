@@ -1,76 +1,53 @@
 # Harold Araujo
 
-**Senior Software Engineer — Backend, Platform & Observability**
+**Senior Software Engineer: Backend, Platform and Observability**
 
 Viña del Mar, Chile (UTC-4) · [LinkedIn](https://www.linkedin.com/in/harold-araujo/) · haroldj.araujof@gmail.com
 
-Senior engineer, 14 years, currently operating at platform scope across a 58-repo TypeScript fleet: instrumentation, CI and release engineering, and the dependency graph underneath them. Python and TypeScript/Node.js on AWS and Azure, with a bias for test automation, migration discipline, and writing things down so other people can move.
+I have 14 years in backend and platform work. Today I work at platform scope across a 58-repo TypeScript fleet that one team of under ten engineers carries. My part is the instrumentation, the CI and release machinery, and the dependency graph under them. Open to Senior or Staff backend and platform roles, IC track, remote.
 
-Open to Senior/Staff backend or platform roles, IC track, remote (UTC−4).
+## What I built there
 
-## Currently
+- **Observability.** Sole author of the OpenTelemetry library that 18 services use, and of the self-hosted Loki, Grafana, Tempo and Mimir backend behind it. [Write-up](https://github.com/hjaraujof/hjaraujof/blob/main/writing/self-hosted-observability.md)
+- **SLOs.** Availability and latency objectives as multi-window burn-rate alerts, with [the rules in public](https://github.com/hjaraujof/lgtm-stack-experiment/blob/main/config/mimir/rules/demo/slo-burn.yaml). [Write-up](https://github.com/hjaraujof/hjaraujof/blob/main/writing/missing-measurement-not-passing.md)
+- **Release engineering.** An orchestrator that merges across the fleet in dependency order and blocks consumers when a parent's publish fails. [Write-up](https://github.com/hjaraujof/hjaraujof/blob/main/writing/dependency-graph-release-ordering.md)
+- **Shared tooling.** One config package that 32 repos extend, and the Vitest preset that 24 repos consume. [Write-up](https://github.com/hjaraujof/hjaraujof/blob/main/writing/false-green-gates.md)
+- **Bulk processing.** A spreadsheet-import sidecar whose processor base drives 12 import pipelines. [Write-up](https://github.com/hjaraujof/hjaraujof/blob/main/writing/failure-ordering.md)
+- **Monorepo consolidation.** Ported standalone services into one monorepo, and split a destructive schema migration into expand, switch and contract steps with a dual write.
 
-Platform engineer for a **58-repo** TypeScript service fleet — a dozen internal packages, a connector platform integrating NetSuite, QuickBooks Online, Shopify, Teamwork and Yotpo, and the CI, release and observability machinery underneath all of it. **One engineering team of under ten people carries all of it**, which is the frame for the list below: the surface area per engineer is the job. In [more depth here](https://github.com/hjaraujof/hjaraujof/blob/main/PROFILE.md):
-
-- **Dependency-graph & release engineering.** Built the orchestrator that sequences fleet-wide merges by dependency order — wave partitioning with cycle detection, then a gate that blocks consumers when a parent's publish fails. Root-caused the duplicate-module-instance and phantom-dependency failures a package-manager migration exposed, and converted standalone services into an Nx monorepo **with git history preserved**. Same discipline under fire: CVE-2025-29927 rolled fleet-wide the week it landed, and exact-version pins across **nine services the same day** a maintainer account was compromised. → [write-up](https://github.com/hjaraujof/hjaraujof/blob/main/writing/dependency-graph-release-ordering.md)
-- **Toolchain centralization.** Founded the shared config package that **32 repos** extend for ESLint, TypeScript, and Vitest — the single base config that made a 14-repo ESM migration a one-file change. Chose that config only after a `tsc` dry-run across **24 repos** separated mechanical errors from real ones, and recorded why the aggressive variant was rejected. Ships two enforcement CLIs. → [write-up](https://github.com/hjaraujof/hjaraujof/blob/main/writing/false-green-gates.md)
-- **Test architecture and quality.** Authored the shared Vitest preset **24 repos** consume — six weeks before the first migration — then personally moved **15 of the fleet's 27 repos** off Jest; five colleagues picked up the pattern for the remaining 12. Built the contract-testing layer: a fake data API whose route manifest is generated from the live controllers, so consumer tests can't pass against a surface that no longer exists. Flake gets measured, not re-run — a shared-database race taken from 3-of-8 passing to **43/43 across ten consecutive runs**.
-- **Observability platform.** Sole author of the OpenTelemetry instrumentation library adopted by **18 services**, and sole author of the self-hosted Loki/Grafana/Tempo/Mimir + Pyroscope backend it reports to — **all of it OpenTofu/Terraform** on AWS, split by concern with plan-only CI, secrets kept out of state, and **~$125/month** against a costed **$1–3k/month** SaaS alternative. Found a resource-attribute collapse in it that was silently discarding **77.5% of metric samples** while every dashboard still rendered. → write-ups on [the backend](https://github.com/hjaraujof/hjaraujof/blob/main/writing/self-hosted-observability.md) and [the instrumentation](https://github.com/hjaraujof/hjaraujof/blob/main/writing/where-tracing-stops-being-automatic.md)
-- **Identity & authorization.** Wrote the original auth middleware for the central OAuth 2.0 service in its first weeks and still maintain it — **second-most-active** contributor to that repo overall, most active this year. Token validation and refresh, cross-subdomain cookies, sign-out; later a structural test that fails the build if a newly-traced class captures argument values without security review, in a service handling passwords, client secrets and OAuth codes.
-- **Bulk and distributed processing.** Founded the spreadsheet-import sidecar that keeps long parses off the portal — **289 commits to the next contributor's 28**. Its **1,642-line** processor base drives **12 import pipelines** that each previously wired their own parser, mapper and validator. Socket.IO progress on two trust levels, buffered replay for clients reconnecting mid-job, and failure ordering so a partial batch never forces a duplicate re-upload. Separately: the ownership protocol and idle-cost work in the fleet's shared batch state machine, plus its S3-backed storage service.
-- **Integration platform.** Built the fleet's deepest connector — per-document state machines and mappers with threaded idempotency keys — then generalized its retry and dedup patterns into the shared base library. Designed and built its **full-sync orchestrator** (~16,000 lines): a **~40-type dependency graph** held as validated data rather than call order, completion detected from three independent signals since no single one can be trusted, and per-type state so a six-hour run resumes rather than restarts. Plus a Zod schema-registry contract layer and a fake API generated from live controllers, so consumer tests can't go stale.
-- **Making silent failures loud.** Traced a **~60-second** auth-endpoint hang — long enough for the load balancer to cut the request — to a task deployed without its Redis host variable, silently defaulting to localhost. Fixed with a fail-closed boot assertion, then generalized into a shared timeout primitive across every Redis-touching route. Separately: found an SSH private key leaking into instance boot logs, and closed it by moving the trust boundary from an embedded deploy key to an IAM-scoped read.
-
-I defined the fleet's availability and latency SLOs as multi-window burn-rate alerts: a **99% availability** budget where a fast burn (**14.4×** the budget, on the 1h *and* 5m windows) pages and a slow burn (**6×**, on 6h *and* 30m) opens a ticket, plus a latency objective of **95% of inbound requests under 250ms** over 30 minutes. Each traffic gate comes from the standard error at its own threshold band rather than a round number — 300 requests per 30 minutes for the latency ratio, 150 for the auth-failure ratio, because that band is twice as wide. Restricting the availability denominator to requests carrying an HTTP status code left the two highest-traffic services emitting no series at all, so their availability went silently unmeasured while every other service reported normally; that silence now raises its own alert. The error budget is still marked provisional in the rules, applied uniformly and not yet calibrated per service, so the objectives and the gates are defensible and an attainment figure is not. No on-call rotation — alerts route by service ownership, which for the observability backend, the release machinery and the import sidecar is me. A sanitized copy of the rules, thresholds and reasoning intact, is public in [lgtm-stack-experiment](https://github.com/hjaraujof/lgtm-stack-experiment/blob/main/config/mimir/rules/demo/slo-burn.yaml).
-
-I have approved **~4,150 pull requests** across the fleet — 3,702 under Bitbucket, 448 since the GitHub migration — and only 23 were ever formally assigned to me, on a team of under ten engineers. I run the same adversarial review against my own branches: one pass returned nine findings, four of them defects in my own previous three commits, two putting credentials into telemetry, and the reasoning I had used to justify the design was itself the bug. Breaking changes ship with a written plan first.
+The full account, with the numbers and who built what, is in [PROFILE.md](https://github.com/hjaraujof/hjaraujof/blob/main/PROFILE.md).
 
 ## Writing
 
-Technical write-ups on the work above — the reasoning, not the résumé version:
-
-- [When your safety check is the thing that's broken](https://github.com/hjaraujof/hjaraujof/blob/main/writing/false-green-gates.md) — a validator that exited 0 having validated nothing, and why a check that can silently pass is worse than no check at all.
-- [Publishing in dependency order](https://github.com/hjaraujof/hjaraujof/blob/main/writing/dependency-graph-release-ordering.md) — what breaks when a dozen interdependent packages each publish on merge, and the guards each failure taught me.
-- [Self-hosting observability, honestly](https://github.com/hjaraujof/hjaraujof/blob/main/writing/self-hosted-observability.md) — the cost case for running your own LGTM stack, and the operational bill that comes with it.
-- [Where tracing stops being automatic](https://github.com/hjaraujof/hjaraujof/blob/main/writing/where-tracing-stops-being-automatic.md) — the boundaries auto-instrumentation doesn't cross, and two sampling defects that delete data while everything reports healthy.
-- [I designed it, someone else ran it](https://github.com/hjaraujof/hjaraujof/blob/main/writing/designed-it-someone-else-ran-it.md) — what production taught the colleague who operated a tool I built, and why design-time reasoning misses it.
-- [A missing measurement is not a passing one](https://github.com/hjaraujof/hjaraujof/blob/main/writing/missing-measurement-not-passing.md) — the availability SLI whose denominator reported a flawless zero on the two busiest services in production, why span status cannot see a 4xx, and how each traffic gate was derived rather than picked.
-- [What happens if the write after this one fails](https://github.com/hjaraujof/hjaraujof/blob/main/writing/failure-ordering.md) — three invariants in a bulk-import pipeline that are failure-ordering decisions rather than features.
-- [The rule needed to be executable](https://github.com/hjaraujof/hjaraujof/blob/main/writing/executable-rules.md) — a tracing policy in a credential-handling service enforced by a test, and the guardrail of my own that was the reason I stopped looking.
-- [Test the crawler against the resource, not a fixture](https://github.com/hjaraujof/hjaraujof/blob/main/writing/crawlers-against-real-resources.md) — why a cloud-crawler fixture only proves the crawler agrees with your recollection, and what a provisioned resource per service costs.
+- [When your safety check is the thing that's broken](https://github.com/hjaraujof/hjaraujof/blob/main/writing/false-green-gates.md)
+- [Publishing in dependency order](https://github.com/hjaraujof/hjaraujof/blob/main/writing/dependency-graph-release-ordering.md)
+- [Self-hosting observability, honestly](https://github.com/hjaraujof/hjaraujof/blob/main/writing/self-hosted-observability.md)
+- [Where tracing stops being automatic](https://github.com/hjaraujof/hjaraujof/blob/main/writing/where-tracing-stops-being-automatic.md)
+- [I designed it, someone else ran it](https://github.com/hjaraujof/hjaraujof/blob/main/writing/designed-it-someone-else-ran-it.md)
+- [A missing measurement is not a passing one](https://github.com/hjaraujof/hjaraujof/blob/main/writing/missing-measurement-not-passing.md)
+- [What happens if the write after this one fails](https://github.com/hjaraujof/hjaraujof/blob/main/writing/failure-ordering.md)
+- [The rule needed to be executable](https://github.com/hjaraujof/hjaraujof/blob/main/writing/executable-rules.md)
+- [Test the crawler against the resource, not a fixture](https://github.com/hjaraujof/hjaraujof/blob/main/writing/crawlers-against-real-resources.md)
 
 ## Open source
 
-Contributor to **[CloudGraph](https://github.com/cloudgraphdev)**, an open-source GraphQL Cloud Security Posture Management engine, 2021–2023 — its CLI has **889 stars**. This is the part of my work anyone can verify without taking my word for it:
+I contributed to [CloudGraph](https://github.com/cloudgraphdev), an open-source GraphQL engine for cloud security posture, from 2021 to 2023. Its CLI has 889 stars. Anyone can check this part of my work.
 
 | Repo | What I did |
 |------|------------|
-| [cloudgraph-provider-azure](https://github.com/cloudgraphdev/cloudgraph-provider-azure) | Built out most of the Azure resource coverage — 30+ new service crawlers (AKS, Active Directory, Event Grid/Hub, Data Factory, Security Center, App Service, SQL, networking, …); #2 contributor overall |
-| [cloudgraph-provider-aws](https://github.com/cloudgraphdev/cloudgraph-provider-aws) | New service crawlers (CloudFront, DynamoDB, CloudFormation, Elastic Beanstalk, VPC), IAM policy / permissions-boundary analysis, and the Terraform that provisions each service I added so its crawler could be exercised against a real resource |
-| [cli](https://github.com/cloudgraphdev/cli) · [sdk](https://github.com/cloudgraphdev/sdk) | Provider wiring for Azure, entity-mutation generation strategies, Dgraph teardown command |
-
-Alongside it, in the same company's private codebase, I built the **blast-radius analysis service** behind the platform's IAM findings — a NestJS/TypeScript microservice that reimplements a slice of AWS IAM policy evaluation instead of calling the Policy Simulator: Allow/Deny precedence across six policy types, ~40 condition operators including `IpAddress` by CIDR containment, principals classified down to SAML and OIDC sessions with `Principal: "*"` expanded against every ARN in the crawl, and trust-graph reachability over `sts:AssumeRole`/`AssumeRoleWithSAML`/`AssumeRoleWithWebIdentity`. On top of it the multi-degree traversal the product is named for, walking outward from one ARN and merging findings per parent node. **11,040 of its 11,139 non-test lines**, by blame with move detection; the remaining 99 are a colleague's fixes inside my files. Elsewhere in the same platform: the AWS resource crawlers for S3, EMR, DynamoDB, CloudFormation, Elastic Beanstalk, SNS, SQS, CloudFront and network interfaces in the internal discovery service — **23 files at 76–100%** of their surviving lines — and the blast-radius surface in the platform's GraphQL API, its assessment query **99%** mine and its mutation **92%**. Narrow ownership inside other people's systems: 6.7% and 5.3% of those repositories overall. More in [PROFILE.md](https://github.com/hjaraujof/hjaraujof/blob/main/PROFILE.md).
+| [cloudgraph-provider-azure](https://github.com/cloudgraphdev/cloudgraph-provider-azure) | Most of the Azure resource coverage: 30+ service crawlers. #2 contributor overall. |
+| [cloudgraph-provider-aws](https://github.com/cloudgraphdev/cloudgraph-provider-aws) | Crawlers for CloudFront, DynamoDB, CloudFormation, Elastic Beanstalk and VPC, and the IAM policy analysis. |
+| [cli](https://github.com/cloudgraphdev/cli) · [sdk](https://github.com/cloudgraphdev/sdk) | Azure provider wiring and a Dgraph teardown command. |
 
 ## Side projects
 
-- **Algorithmic trading platform** (private, solo-built) — Python: a unified async broker interface over Alpaca and Binance, an event-driven backtester with walk-forward validation, Monte Carlo, deflated Sharpe and CVaR, Kelly-criterion sizing using Ledoit-Wolf covariance shrinkage, and an immutable TimescaleDB trade journal with WAL fallback wired into every bot. Two strategies paper-trade live today; the rest are in development. Happy to walk through the design and the validation methodology.
-- [lgtm-stack-experiment](https://github.com/hjaraujof/lgtm-stack-experiment) — self-contained, org-agnostic LGTM observability stack: Docker Compose for local dev plus a single-host AWS Terraform deploy, 13 Grafana dashboards, Mimir alerting rules, NGINX + Let's Encrypt.
-- [english_tutor](https://github.com/hjaraujof/english_tutor) — fully local English tutor, no data leaves the machine: llama.cpp serving Qwen 2.5 on a Pascal GPU, faster-whisper ASR, FastAPI backend; grammar review plus speaking-fluency feedback.
-
-## AI-assisted engineering
-
-I run an unattended PR reviewer against live repositories: a Claude Agent SDK loop on a systemd timer that discovers open pull requests, runs a staged adversarial review with reachability-gated findings, posts only verified findings as inline comments, re-verifies pushed fixes, and honors human `/waive` overrides — **160+ production runs** with per-run cost telemetry and task-tier model routing. Underneath it sits reusable agent-loop infrastructure: a billing guard, a task→model router, and a qualification ladder that stops ordinary automation from being over-built into agents. I also maintain a fleet-scale integration of [graphify](https://github.com/Graphify-Labs/graphify) (**104K★**) across ~60 repositories — auto-refresh git hooks, freshness-gated query hints, and drift surveys.
+- **Unattended PR reviewer.** A Claude Agent SDK loop on a systemd timer that reviews open pull requests, posts only verified findings and checks pushed fixes again. 160+ production runs.
+- **Algorithmic trading platform** (private, solo-built, Python). One async broker interface over Alpaca and Binance, a backtester, and an immutable TimescaleDB trade journal. Two strategies paper-trade today.
+- [lgtm-stack-experiment](https://github.com/hjaraujof/lgtm-stack-experiment). A self-contained LGTM observability stack: Docker Compose for local use and a single-host AWS Terraform deploy.
+- [english_tutor](https://github.com/hjaraujof/english_tutor). A local English tutor on llama.cpp and faster-whisper. No data leaves the machine.
 
 ## Stack
 
-**Languages:** TypeScript / Node.js · Python · SQL · PHP (earlier career)
-**Backend:** NestJS · Next.js · GraphQL · Prisma · Fastify · Zod
-**Cloud & infra:** AWS (ECS, Cognito, DynamoDB, S3, SQS, CodeArtifact) · Azure · Terraform / OpenTofu · Docker
-**Observability:** OpenTelemetry · Pino · Grafana · Loki · Tempo · Mimir · Prometheus
-**Data:** PostgreSQL / TimescaleDB · DynamoDB · MongoDB · SQLite
-**Quality:** Vitest · Jest · pytest · TDD · GitHub Actions · Bitbucket Pipelines
-**AI tooling:** Claude Code · Claude Agent SDK · MCP · multi-agent orchestration
+TypeScript and Node.js · Python · NestJS · Next.js · Prisma · AWS · Terraform and OpenTofu · OpenTelemetry · Grafana, Loki, Tempo, Mimir · PostgreSQL and TimescaleDB · Vitest
 
----
-
-<sub>Most of my work lives in private org repos. Happy to go deep on any of the above.</sub>
+<sub>Most of my work is in private org repos. Ask me about any of it.</sub>
